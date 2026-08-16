@@ -1,0 +1,19 @@
+﻿name: url-download
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'URL to download'
+        required: true
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download
+        run: curl -fL --retry 3 -o artifact.bin "${{ github.event.inputs.url }}"
+      - name: Create release and upload
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="download-$(date +%s)"
+          gh release create "$TAG" artifact.bin --repo "$GITHUB_REPOSITORY" --title "Download $(date -u +%Y%m%d-%H%M%S)" --generate-notes || true
