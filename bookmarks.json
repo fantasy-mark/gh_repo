@@ -1,0 +1,12 @@
+﻿{
+    "bookmarks":  [
+                      {
+                          "id":  "test1",
+                          "createdAt":  1786863000000,
+                          "note":  "备份测试",
+                          "updatedAt":  1786863000000,
+                          "title":  "DeepSeek官网",
+                          "url":  "https://www.deepseek.com"
+                      }
+                  ]
+}
