@@ -1,4 +1,4 @@
-﻿name: url-download
+name: url-download
 on:
   workflow_dispatch:
     inputs:
