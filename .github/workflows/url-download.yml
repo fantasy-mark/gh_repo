@@ -14,9 +14,42 @@ jobs:
       - name: Download
         env:
           GH_TOKEN: ${{ github.token }}
+          URL: ${{ github.event.inputs.url }}
         run: |
-          URL="${{ github.event.inputs.url }}"
-          if [[ "$URL" == *"raw.githubusercontent.com"* || "$URL" == *"api.github.com"* ]]; then
+          set -e
+          URL="$URL"
+          if [[ "$URL" == *"bilibili.com/video/"* ]]; then
+            echo "Bilibili video detected, resolving stream..."
+            python3 - <<'PY'
+import json, re, sys, urllib.request, os
+url = os.environ["URL"]
+bvid = re.search(r"BV[0-9A-Za-z]{10}", url).group(0)
+def get(u, hdr=None):
+    req = urllib.request.Request(u, headers={"User-Agent": "Mozilla/5.0"})
+    if hdr:
+        for k, v in hdr.items(): req.add_header(k, v)
+    with urllib.request.urlopen(req, timeout=30) as r:
+        return json.load(r)
+info = get(f"https://api.bilibili.com/x/web-interface/view?bvid={bvid}")
+if info.get("code") != 0:
+    raise SystemExit(f"view api failed: {info}")
+cid = info["data"]["cid"]
+title = info["data"]["title"]
+pl = get(f"https://api.bilibili.com/x/player/playurl?bvid={bvid}&cid={cid}&qn=64&fnval=0", {"Referer": "https://www.bilibili.com/"})
+if pl.get("code") != 0 or not (pl.get("data") or {}).get("durl"):
+    raise SystemExit(f"playurl failed: {pl}")
+stream = pl["data"]["durl"][0]["url"]
+quality = pl["data"].get("quality")
+print(f"resolved {title} quality={quality}")
+req = urllib.request.Request(stream, headers={"User-Agent": "Mozilla/5.0", "Referer": "https://www.bilibili.com/"})
+with urllib.request.urlopen(req, timeout=600) as r, open("artifact.bin", "wb") as f:
+    while True:
+        chunk = r.read(1 << 20)
+        if not chunk: break
+        f.write(chunk)
+print("bilibili download done")
+PY
+          elif [[ "$URL" == *"raw.githubusercontent.com"* || "$URL" == *"api.github.com"* ]]; then
             if [[ "$URL" == *"/contents/"* ]]; then
               gh api "$URL" -H "Accept: application/vnd.github.raw" > artifact.bin
             else
