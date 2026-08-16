@@ -5,6 +5,8 @@ on:
       url:
         description: 'URL to download'
         required: true
+permissions:
+  contents: write
 jobs:
   download:
     runs-on: ubuntu-latest
@@ -15,7 +17,6 @@ jobs:
         run: |
           URL="${{ github.event.inputs.url }}"
           if [[ "$URL" == *"raw.githubusercontent.com"* || "$URL" == *"api.github.com"* ]]; then
-            # 私有仓库 raw/API URL：通过 gh api 带认证下载
             if [[ "$URL" == *"/contents/"* ]]; then
               gh api "$URL" -H "Accept: application/vnd.github.raw" > artifact.bin
             else
