@@ -21,7 +21,7 @@ jobs:
           if [[ "$URL" == *"bilibili.com/video/"* ]]; then
             echo "Bilibili video detected, resolving stream..."
             python3 - <<'PY'
-import json, re, sys, urllib.request, os
+import json, re, urllib.request, os
 url = os.environ["URL"]
 bvid = re.search(r"BV[0-9A-Za-z]{10}", url).group(0)
 def get(u, hdr=None):
@@ -35,18 +35,21 @@ if info.get("code") != 0:
     raise SystemExit(f"view api failed: {info}")
 cid = info["data"]["cid"]
 title = info["data"]["title"]
+title = re.sub(r'[\\/:*?"<>|]', '_', title).strip() or "bilibili_video"
 pl = get(f"https://api.bilibili.com/x/player/playurl?bvid={bvid}&cid={cid}&qn=64&fnval=0", {"Referer": "https://www.bilibili.com/"})
 if pl.get("code") != 0 or not (pl.get("data") or {}).get("durl"):
     raise SystemExit(f"playurl failed: {pl}")
 stream = pl["data"]["durl"][0]["url"]
 quality = pl["data"].get("quality")
-print(f"resolved {title} quality={quality}")
+out = f"{title}.mp4"
+print(f"resolved {title} quality={quality} -> {out}")
 req = urllib.request.Request(stream, headers={"User-Agent": "Mozilla/5.0", "Referer": "https://www.bilibili.com/"})
-with urllib.request.urlopen(req, timeout=600) as r, open("artifact.bin", "wb") as f:
+with urllib.request.urlopen(req, timeout=600) as r, open(out, "wb") as f:
     while True:
         chunk = r.read(1 << 20)
         if not chunk: break
         f.write(chunk)
+open(".outname", "w", encoding="utf-8").write(out)
 print("bilibili download done")
 PY
           elif [[ "$URL" == *"raw.githubusercontent.com"* || "$URL" == *"api.github.com"* ]]; then
@@ -57,10 +60,22 @@ PY
             fi
           else
             curl -fL --retry 3 -o artifact.bin "$URL"
+            # 尝试从 URL basename 推导文件名
+            BN="$(basename "$URL" | sed 's/?.*//')"
+            if [[ -n "$BN" && "$BN" != "artifact.bin" && "$BN" != *".html" ]]; then
+              cp artifact.bin "$BN"
+              echo "$BN" > .outname
+            fi
           fi
       - name: Create release and upload
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="download-$(date +%s)"
-          gh release create "$TAG" artifact.bin --repo "$GITHUB_REPOSITORY" --title "Download $(date -u +%Y%m%d-%H%M%S)" --generate-notes || true
+          if [[ -f .outname ]]; then
+            OUT="$(cat .outname)"
+          else
+            OUT="artifact.bin"
+          fi
+          echo "uploading: $OUT"
+          gh release create "$TAG" "$OUT" --repo "$GITHUB_REPOSITORY" --title "Download $(date -u +%Y%m%d-%H%M%S)" --generate-notes || true
