@@ -10,7 +10,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download
-        run: curl -fL --retry 3 -o artifact.bin "${{ github.event.inputs.url }}"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          URL="${{ github.event.inputs.url }}"
+          if [[ "$URL" == *"raw.githubusercontent.com"* || "$URL" == *"api.github.com"* ]]; then
+            # 私有仓库 raw/API URL：通过 gh api 带认证下载
+            if [[ "$URL" == *"/contents/"* ]]; then
+              gh api "$URL" -H "Accept: application/vnd.github.raw" > artifact.bin
+            else
+              curl -fL --retry 3 -H "Authorization: Bearer $GH_TOKEN" -o artifact.bin "$URL"
+            fi
+          else
+            curl -fL --retry 3 -o artifact.bin "$URL"
+          fi
       - name: Create release and upload
         env:
           GH_TOKEN: ${{ github.token }}
