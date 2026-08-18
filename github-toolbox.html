@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub 工具箱</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .dsw-gh-root {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .dsw-gh-header {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+            flex-wrap: wrap;
+        }
+
+        .dsw-gh-title-lg {
+            font-size: 24px;
+            font-weight: 700;
+            color: #24292e;
+        }
+
+        .dsw-gh-desc {
+            font-size: 13px;
+            color: #6a737d;
+        }
+
+        .dsw-gh-section {
+            margin-bottom: 20px;
+            padding: 16px;
+            border: 1px solid #e1e4e8;
+            border-radius: 8px;
+            background: #ffffff;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .dsw-gh-section-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 16px;
+            color: #24292e;
+        }
+
+        .dsw-gh-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            background: #ffffff;
+            color: #24292e;
+            font-size: 14px;
+            box-sizing: border-box;
+            margin-bottom: 10px;
+            transition: border-color 0.2s;
+        }
+
+        .dsw-gh-input:focus {
+            outline: none;
+            border-color: #0969da;
+            box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.1);
+        }
+
+        .dsw-gh-btn {
+            padding: 8px 16px;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            background: #f6f8fa;
+            color: #24292e;
+            font-size: 14px;
+            cursor: pointer;
+            white-space: nowrap;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.2s;
+            font-weight: 500;
+        }
+
+        .dsw-gh-btn:hover {
+            background: #f3f4f6;
+            border-color: #afb8c1;
+        }
+
+        .dsw-gh-btn-primary {
+            background: #0969da;
+            color: #fff;
+            border-color: transparent;
+        }
+
+        .dsw-gh-btn-primary:hover {
+            background: #0550ae;
+        }
+
+        .dsw-gh-btn-primary:disabled,
+        .dsw-gh-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .dsw-gh-btn-sm {
+            padding: 5px 12px;
+            font-size: 13px;
+        }
+
+        .dsw-gh-btn-disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            pointer-events: none;
+            color: #6a737d;
+        }
+
+        .dsw-gh-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .dsw-gh-error {
+            color: #cf222e;
+            font-size: 13px;
+            margin: 8px 0;
+            padding: 8px 12px;
+            background: #ffebe9;
+            border-left: 3px solid #cf222e;
+            border-radius: 4px;
+        }
+
+        .dsw-gh-ok {
+            color: #1a7f37;
+            font-size: 13px;
+            margin: 8px 0;
+            padding: 8px 12px;
+            background: #dafbe1;
+            border-left: 3px solid #1a7f37;
+            border-radius: 4px;
+        }
+
+        .dsw-gh-list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .dsw-gh-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 12px;
+            border-bottom: 1px solid #e1e4e8;
+            font-size: 14px;
+            transition: background 0.15s;
+        }
+
+        .dsw-gh-item:last-child {
+            border-bottom: none;
+        }
+
+        .dsw-gh-item:hover {
+            background: #f6f8fa;
+        }
+
+        .dsw-gh-item-name {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .dsw-gh-item-name:hover {
+            color: #0969da;
+        }
+
+        .dsw-gh-item-meta {
+            color: #6a737d;
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .dsw-gh-status {
+            margin: 10px 0;
+            padding: 10px 14px;
+            border: 1px solid #d0d7de;
+            border-radius: 6px;
+            font-size: 13px;
+            background: #f6f8fa;
+        }
+
+        .dsw-gh-link {
+            color: #0969da;
+            word-break: break-all;
+            text-decoration: none;
+        }
+
+        .dsw-gh-link:hover {
+            text-decoration: underline;
+        }
+
+        .dsw-gh-hint {
+            font-size: 13px;
+            color: #6a737d;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6a737d;
+        }
+
+        @media (max-width: 768px) {
+            .dsw-gh-root {
+                padding: 15px;
+            }
+
+            .dsw-gh-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .dsw-gh-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .dsw-gh-btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+
+    <script>
+        'use strict';
+
+        // ===== 配置 =====
+        var CONFIG = {
+            REPO: 'fantasy-mark/gh_repo',
+            BRANCH: 'main',
+            MAX_UPLOAD: 200 * 1024, // 200KB
+            WORKFLOW_FILE: '.github/workflows/url-download.yml',
+            API_BASE: 'https://api.github.com'
+        };
+
+        // ===== Workflow YAML =====
+        var WORKFLOW_YAML = [
+            'name: url-download',
+            'on:',
+            '  workflow_dispatch:',
+            '    inputs:',
+            '      url:',
+            "        description: 'URL to download'",
+            '        required: true',
+            'permissions:',
+            '  contents: write',
+            'jobs:',
+            '  download:',
+            '    runs-on: ubuntu-latest',
+            '    steps:',
+            '      - name: Checkout',
+            '        uses: actions/checkout@v4',
+            '      - name: Download',
+            '        env:',
+            '          GH_TOKEN: ${{ github.token }}',
+            '          URL: ${{ github.event.inputs.url }}',
+            '        run: |',
+            '          set -e',
+            '          URL="$URL"',
+            '          if [[ "$URL" == *"bilibili.com/video/"* ]]; then',
+            '            echo "Bilibili video detected, resolving stream..."',
+            '            python3 .github/scripts/bili_dl.py',
+            '          elif [[ "$URL" == *"raw.githubusercontent.com"* || "$URL" == *"api.github.com"* ]]; then',
+            '            if [[ "$URL" == *"/contents/"* ]]; then',
+            '              gh api "$URL" -H "Accept: application/vnd.github.raw" > artifact.bin',
+            '            else',
+            '              curl -fL --retry 3 -H "Authorization: Bearer $GH_TOKEN" -o artifact.bin "$URL"',
+            '            fi',
+            '          else',
+            '            curl -fL --retry 3 -o artifact.bin "$URL"',
+            '            BN="$(basename "$URL" | sed \'s/?.*//\')"',
+            '            if [[ -n "$BN" && "$BN" != "artifact.bin" && "$BN" != *".html" ]]; then',
+            '              cp artifact.bin "$BN"',
+            '              echo "$BN" > .outname',
+            '            fi',
+            '          fi',
+            '      - name: Create release and upload',
+            '        env:',
+            '          GH_TOKEN: ${{ github.token }}',
+            '        run: |',
+            '          TAG="download-$(date +%s)"',
+            '          if [[ -f .outname ]]; then',
+            '            OUT="$(cat .outname)"',
+            '          else',
+            '            OUT="artifact.bin"',
+            '          fi',
+            '          echo "uploading: $OUT"',
+            '          gh release create "$TAG" "$OUT" --repo "$GITHUB_REPOSITORY" --title "Download $(date -u +%Y%m%d-%H%M%S)" --generate-notes || true'
+        ].join('\n');
+
+        // ===== 工具函数 =====
+        function bytesToBase64(bytes) {
+            var binary = '';
+            for (var i = 0; i < bytes.length; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return btoa(binary);
+        }
+
+        function utf8ToBase64(str) {
+            var bytes = new TextEncoder().encode(str);
+            return bytesToBase64(bytes);
+        }
+
+        function base64ToUtf8(base64) {
+            var binary = atob(base64);
+            var bytes = new Uint8Array(binary.length);
+            for (var i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+            return new TextDecoder('utf-8').decode(bytes);
+        }
+
+        // ===== GitHub API 请求封装 =====
+        async function githubRequest(method, path, pat, body) {
+            var url = CONFIG.API_BASE + path;
+            var headers = {
+                'User-Agent': 'dsh-gh-tab/1.0',
+                'Accept': 'application/vnd.github+json',
+                'X-GitHub-Api-Version': '2022-11-28'
+            };
+            if (pat) headers['Authorization'] = 'Bearer ' + pat;
+            if (body) headers['Content-Type'] = 'application/json';
+
+            try {
+                var response = await fetch(url, {
+                    method: method,
+                    headers: headers,
+                    body: body ? JSON.stringify(body) : null
+                });
+                var contentType = response.headers.get('Content-Type') || '';
+                var data;
+                if (contentType.indexOf('application/json') >= 0) {
+                    data = await response.json();
+                } else {
+                    data = await response.text();
+                }
+                if (!response.ok) {
+                    return { status: response.status, error: (typeof data === 'object' && data) ? data : { message: data }, url: url };
+                }
+                return { status: response.status, json: data, url: url };
+            } catch (err) {
+                return { status: 0, error: { message: err.name + ': ' + err.message }, url: url };
+            }
+        }
+
+        // ===== LocalStorage 配置 =====
+        function loadConfig() {
+            try {
+                var raw = localStorage.getItem('gh_toolbox_config');
+                return raw ? JSON.parse(raw) : null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function saveConfig(pat) {
+            try {
+                localStorage.setItem('gh_toolbox_config', JSON.stringify({ pat: pat, repo: CONFIG.REPO, branch: CONFIG.BRANCH }));
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function clearConfig() {
+            try {
+                localStorage.removeItem('gh_toolbox_config');
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function getPat() {
+            var c = loadConfig();
+            return (c && c.pat) || '';
+        }
+
+        // ===== DOM 辅助 =====
+        function el(tag, attrs) {
+            var node = document.createElement(tag);
+            var children = Array.prototype.slice.call(arguments, 2);
+            if (attrs) {
+                Object.keys(attrs).forEach(function (k) {
+                    if (k === 'className') node.className = attrs[k];
+                    else if (k === 'style') Object.assign(node.style, attrs[k]);
+                    else if (k === 'html') node.innerHTML = attrs[k];
+                    else if (k === 'text') node.textContent = attrs[k];
+                    else if (k.indexOf('on') === 0 && typeof attrs[k] === 'function') node.addEventListener(k.slice(2).toLowerCase(), attrs[k]);
+                    else if (attrs[k] !== null && attrs[k] !== undefined) node.setAttribute(k, attrs[k]);
+                });
+            }
+            (children || []).forEach(function (c) {
+                if (c === null || c === undefined) return;
+                node.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+            });
+            return node;
+        }
+
+        function clearNode(node) {
+            while (node.firstChild) node.removeChild(node.firstChild);
+        }
+
+        // ===== 应用状态 =====
+        var state = {
+            patSet: false,
+            repo: CONFIG.REPO,
+            branch: CONFIG.BRANCH,
+            path: '',
+            items: null,
+            fsMsg: null,
+            dlUrl: '',
+            dlState: null,
+            dlResult: null,
+            patBusy: false,
+            patMsg: null,
+            patInput: ''
+        };
+
+        var appRoot = document.getElementById('app');
+        var pollTimer = null;
+
+        // ===== 渲染 =====
+        function render() {
+            clearNode(appRoot);
+            var root = el('div', { className: 'dsw-gh-root' });
+
+            if (!state.patSet) {
+                root.appendChild(renderSetup());
+            } else {
+                root.appendChild(renderMain());
+            }
+            appRoot.appendChild(root);
+        }
+
+        function renderSetup() {
+            var header = el('div', { className: 'dsw-gh-header' },
+                el('div', { className: 'dsw-gh-title-lg' }, 'GitHub 工具箱'),
+                el('div', { className: 'dsw-gh-desc' }, '管理 ' + CONFIG.REPO + ' 仓库文件，用 GitHub Action 下载任意 URL 并发布到 Release')
+            );
+
+            var patInput = el('input', {
+                className: 'dsw-gh-input',
+                type: 'password',
+                placeholder: '粘贴 github_pat_xxx 或 ghp_xxx',
+                value: state.patInput
+            });
+            patInput.addEventListener('input', function (e) { state.patInput = e.target.value; });
+
+            var saveBtn = el('button', {
+                className: 'dsw-gh-btn dsw-gh-btn-primary',
+                disabled: state.patBusy ? 'disabled' : null,
+                text: state.patBusy ? '验证中…' : '保存并验证'
+            });
+            saveBtn.addEventListener('click', savePat);
+
+            var section = el('div', { className: 'dsw-gh-section' },
+                el('div', { className: 'dsw-gh-section-title' }, '初始化：设置 Personal Access Token (PAT)'),
+                el('div', { className: 'dsw-gh-hint' }, '需要一个有 ' + CONFIG.REPO + ' 仓库读写权限的 PAT：'),
+                el('div', { className: 'dsw-gh-row' },
+                    el('a', { className: 'dsw-gh-link', href: 'https://github.com/settings/tokens?type=beta', target: '_blank', rel: 'noreferrer' }, '创建 Fine-grained PAT →'),
+                    el('a', { className: 'dsw-gh-link', href: 'https://github.com/settings/tokens', target: '_blank', rel: 'noreferrer' }, '或创建 classic PAT →')
+                ),
+                el('div', { className: 'dsw-gh-hint' }, '权限要求：Contents(读写) + Actions(读写) + 仓库元数据读取。'),
+                patInput,
+                el('div', { className: 'dsw-gh-row' }, saveBtn)
+            );
+
+            // 提示消息
+            if (state.patMsg) {
+                if (state.patMsg.err) section.appendChild(el('div', { className: 'dsw-gh-error' }, state.patMsg.err));
+                if (state.patMsg.ok) section.appendChild(el('div', { className: 'dsw-gh-ok' }, state.patMsg.ok));
+            }
+            section.appendChild(el('div', { className: 'dsw-gh-hint' }, 'PAT 仅保存在浏览器 localStorage 中，不会上传到任何服务器。'));
+
+            return el('div', null, header, section);
+        }
+
+        function renderMain() {
+            var header = el('div', { className: 'dsw-gh-header' });
+            header.appendChild(el('div', { className: 'dsw-gh-title-lg' }, 'GitHub 工具箱'));
+            header.appendChild(el('div', { className: 'dsw-gh-desc' }, CONFIG.REPO + ' · ' + CONFIG.BRANCH));
+            var clearBtn = el('button', { className: 'dsw-gh-btn dsw-gh-btn-sm', text: '清除 PAT' });
+            clearBtn.addEventListener('click', clearPat);
+            header.appendChild(clearBtn);
+
+            return el('div', null,
+                header,
+                state.patMsg && state.patMsg.ok ? el('div', { className: 'dsw-gh-ok' }, state.patMsg.ok) : null,
+                renderDownload(),
+                renderFileManager()
+            );
+        }
+
+        function renderDownload() {
+            var dlInput = el('input', {
+                className: 'dsw-gh-input',
+                style: { flex: 1, marginBottom: 0 },
+                placeholder: 'https://www.bilibili.com/video/BV... 或任意文件 URL',
+                value: state.dlUrl
+            });
+            dlInput.addEventListener('input', function (e) { state.dlUrl = e.target.value; });
+
+            var startBtn = el('button', {
+                className: 'dsw-gh-btn dsw-gh-btn-primary',
+                text: '开始下载',
+                disabled: (state.dlState && !state.dlState.done && !state.dlState.error) ? 'disabled' : null
+            });
+            startBtn.addEventListener('click', startDownload);
+
+            var section = el('div', { className: 'dsw-gh-section' },
+                el('div', { className: 'dsw-gh-section-title' }, '① URL 下载 → 自动发布 Release（支持 B 站视频）'),
+                el('div', { className: 'dsw-gh-hint' }, '粘贴任意文件下载链接（含 B 站视频链接），插件触发仓库 GitHub Action 下载并发布到 Release。B 站视频自动解析为 {标题}.mp4（匿名 480p）。'),
+                el('div', { className: 'dsw-gh-row' }, dlInput, startBtn)
+            );
+
+            if (state.dlState && state.dlState.stage) {
+                section.appendChild(el('div', { className: 'dsw-gh-status' }, state.dlState.stage));
+            }
+            if (state.dlState && state.dlState.error) {
+                section.appendChild(el('div', { className: 'dsw-gh-error' }, state.dlState.error));
+            }
+            if (state.dlResult) {
+                var okBox = el('div', { className: 'dsw-gh-ok' },
+                    el('div', null, '已发布：' + (state.dlResult.name || '')),
+                    el('div', null, el('a', { className: 'dsw-gh-link', href: state.dlResult.url, target: '_blank', rel: 'noreferrer' }, state.dlResult.url))
+                );
+                section.appendChild(okBox);
+            }
+            return section;
+        }
+
+        function renderFileManager() {
+            var backBtn = el('button', {
+                className: 'dsw-gh-btn dsw-gh-btn-sm',
+                text: '← 返回根目录',
+                disabled: state.path ? null : 'disabled'
+            });
+            backBtn.addEventListener('click', function () { refreshList(''); });
+
+            var fileInput = el('input', { type: 'file', style: { display: 'none' } });
+            fileInput.addEventListener('change', onUpload);
+            var uploadLabel = el('label', { className: 'dsw-gh-btn dsw-gh-btn-sm', style: { cursor: 'pointer' } }, '上传文件');
+            uploadLabel.appendChild(fileInput);
+
+            var section = el('div', { className: 'dsw-gh-section' },
+                el('div', { className: 'dsw-gh-section-title' }, '② 仓库文件管理（< 200KB 上传）'),
+                el('div', { className: 'dsw-gh-row' },
+                    backBtn,
+                    el('span', { className: 'dsw-gh-item-meta' }, '当前: /' + state.path),
+                    uploadLabel
+                )
+            );
+
+            if (state.fsMsg) {
+                if (state.fsMsg.err) section.appendChild(el('div', { className: 'dsw-gh-error' }, state.fsMsg.err));
+                if (state.fsMsg.ok) section.appendChild(el('div', { className: 'dsw-gh-ok' }, state.fsMsg.ok));
+            }
+
+            if (state.items === null) {
+                section.appendChild(el('div', { className: 'loading' }, '加载中…'));
+            } else if (state.items.length === 0) {
+                section.appendChild(el('div', { className: 'dsw-gh-hint' }, '（空目录）'));
+            } else {
+                var list = el('div', { className: 'dsw-gh-list' });
+                state.items.forEach(function (it) {
+                    var nameSpan = el('span', { className: 'dsw-gh-item-name' }, (it.type === 'dir' ? '📁 ' : '📄 ') + it.name);
+                    if (it.type === 'dir') {
+                        nameSpan.addEventListener('click', function () { enterDir(it); });
+                    }
+
+                    var meta = el('span', { className: 'dsw-gh-item-meta' },
+                        it.type === 'dir' ? '目录' : (it.size != null ? Math.round(it.size / 1024) + ' KB' : '')
+                    );
+
+                    var item = el('div', { key: it.path, className: 'dsw-gh-item' }, nameSpan, meta);
+
+                    if (it.type === 'file') {
+                        var dlLink = el('a', {
+                            className: 'dsw-gh-btn dsw-gh-btn-sm',
+                            href: it.downloadUrl || '#',
+                            download: it.name,
+                            target: it.downloadUrl ? '_blank' : null,
+                            rel: 'noreferrer'
+                        }, '下载');
+                        item.appendChild(dlLink);
+
+                        var delBtn = el('button', { className: 'dsw-gh-btn dsw-gh-btn-sm', text: '删除' });
+                        delBtn.addEventListener('click', function () { deleteFile(it); });
+                        item.appendChild(delBtn);
+                    }
+
+                    list.appendChild(item);
+                });
+                section.appendChild(list);
+            }
+
+            return section;
+        }
+
+        // ===== 操作函数 =====
+        async function savePat() {
+            var p = (state.patInput || '').trim();
+            if (!p) return;
+            state.patBusy = true;
+            state.patMsg = null;
+            render();
+
+            var r = await githubRequest('GET', '/user', p);
+            if (r.status === 200 && r.json && r.json.login) {
+                saveConfig(p);
+                state.patBusy = false;
+                state.patSet = true;
+                state.patInput = '';
+                state.patMsg = { ok: 'PAT 已保存并验证通过' };
+                render();
+                refreshList('');
+            } else {
+                state.patBusy = false;
+                state.patMsg = { err: (r.error && r.error.message) || 'PAT 无效或保存失败' };
+                render();
+            }
+        }
+
+        function clearPat() {
+            clearConfig();
+            state.patSet = false;
+            state.items = null;
+            state.fsMsg = null;
+            state.patMsg = null;
+            state.dlState = null;
+            state.dlResult = null;
+            if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+            render();
+        }
+
+        async function refreshList(p) {
+            var pat = getPat();
+            if (!pat) return;
+
+            var apiPath = '/repos/' + CONFIG.REPO + '/contents' + (p ? '/' + p : '');
+            var r = await githubRequest('GET', apiPath, pat);
+
+            if (r.status === 200 && Array.isArray(r.json)) {
+                state.path = p || '';
+                state.items = r.json.map(function (item) {
+                    return {
+                        name: item.name || '',
+                        path: item.path || '',
+                        type: item.type === 'dir' ? 'dir' : 'file',
+                        size: item.size != null ? item.size : null,
+                        sha: item.sha || '',
+                        downloadUrl: item.download_url || ''
+                    };
+                });
+                state.fsMsg = null;
+            } else {
+                state.items = [];
+                state.fsMsg = { err: (r.error && r.error.message) || '列表获取失败' };
+            }
+            render();
+        }
+
+        function enterDir(item) {
+            refreshList(item.path);
+        }
+
+        async function deleteFile(item) {
+            var pat = getPat();
+            if (!pat) return;
+            state.fsMsg = null;
+            render();
+
+            var body = { message: 'delete via dsh gh tab', sha: item.sha };
+            var r = await githubRequest('DELETE', '/repos/' + CONFIG.REPO + '/contents/' + item.path, pat, body);
+            if (r.status === 200) {
+                state.fsMsg = { ok: '已删除 ' + item.name };
+                render();
+                refreshList(state.path);
+            } else {
+                state.fsMsg = { err: (r.error && r.error.message) || '删除失败' };
+                render();
+            }
+        }
+
+        async function onUpload(ev) {
+            var file = ev.target.files && ev.target.files[0];
+            if (!file) return;
+
+            if (file.size > CONFIG.MAX_UPLOAD) {
+                state.fsMsg = { err: '文件超过 200KB 限制：' + file.name + ' (' + Math.round(file.size / 1024) + ' KB)' };
+                render();
+                ev.target.value = '';
+                return;
+            }
+
+            var pat = getPat();
+            if (!pat) return;
+
+            try {
+                var arrayBuffer = await file.arrayBuffer();
+                var bytes = new Uint8Array(arrayBuffer);
+                var b64 = bytesToBase64(bytes);
+                var filePath = state.path ? state.path + '/' + file.name : file.name;
+                var body = { message: 'upload via dsh gh tab', content: b64 };
+
+                var r = await githubRequest('PUT', '/repos/' + CONFIG.REPO + '/contents/' + filePath, pat, body);
+                if (r.status === 200 || r.status === 201) {
+                    state.fsMsg = { ok: '已上传 ' + file.name };
+                    render();
+                    refreshList(state.path);
+                } else {
+                    state.fsMsg = { err: (r.error && r.error.message) || '上传失败' };
+                    render();
+                }
+            } catch (e) {
+                state.fsMsg = { err: '读取文件失败: ' + String(e) };
+                render();
+            }
+            ev.target.value = '';
+        }
+
+        async function startDownload() {
+            var u = (state.dlUrl || '').trim();
+            if (!u) return;
+            if (state.dlState && !state.dlState.done && !state.dlState.error) return;
+
+            var pat = getPat();
+            if (!pat) return;
+
+            state.dlState = { stage: '触发 GitHub Action…' };
+            state.dlResult = null;
+            render();
+
+            // 确保 workflow 存在
+            var wfPath = CONFIG.WORKFLOW_FILE.replace(/^\//, '');
+            var wfCheck = await githubRequest('GET', '/repos/' + CONFIG.REPO + '/contents/' + wfPath, pat);
+            if (wfCheck.status !== 200) {
+                var b64 = utf8ToBase64(WORKFLOW_YAML);
+                var wfBody = { message: 'add url-download workflow', content: b64 };
+                await githubRequest('PUT', '/repos/' + CONFIG.REPO + '/contents/' + wfPath, pat, wfBody);
+            }
+
+            // 触发 workflow
+            var dispatchBody = { ref: CONFIG.BRANCH, inputs: { url: u } };
+            var r = await githubRequest('POST', '/repos/' + CONFIG.REPO + '/actions/workflows/url-download.yml/dispatches', pat, dispatchBody);
+
+            if (r.status === 204) {
+                state.dlState = { stage: 'Action 已触发，等待完成…' };
+                render();
+                startPolling();
+            } else {
+                state.dlState = { stage: '失败', error: (r.error && r.error.message) || '触发失败' };
+                render();
+            }
+        }
+
+        function startPolling() {
+            if (pollTimer) clearInterval(pollTimer);
+            pollTimer = setInterval(async function () {
+                var pat = getPat();
+                if (!pat) return;
+
+                var r = await githubRequest('GET', '/repos/' + CONFIG.REPO + '/actions/workflows/url-download.yml/runs?per_page=1&page=1', pat);
+                if (r.status !== 200 || !r.json || !r.json.workflow_runs || r.json.workflow_runs.length === 0) {
+                    return; // 继续等待
+                }
+
+                var run = r.json.workflow_runs[0];
+                if (run.status === 'completed') {
+                    clearInterval(pollTimer);
+                    pollTimer = null;
+
+                    // 获取最新 release
+                    var rel = await githubRequest('GET', '/repos/' + CONFIG.REPO + '/releases?per_page=1', pat);
+                    if (rel.status === 200 && rel.json && rel.json.length > 0) {
+                        var latest = rel.json[0];
+                        var asset = latest.assets && latest.assets[0];
+                        if (asset) {
+                            state.dlState = { stage: '完成', done: true };
+                            state.dlResult = { url: asset.browser_download_url, name: asset.name };
+                        } else {
+                            state.dlState = { stage: '完成', done: true };
+                            state.dlResult = { url: latest.html_url, name: latest.name };
+                        }
+                    } else {
+                        state.dlState = { stage: '完成', done: true };
+                        state.dlResult = { url: '', name: '' };
+                    }
+                    render();
+                } else {
+                    var statusText = run.status === 'in_progress' ? '运行中…' : '排队中…';
+                    state.dlState = { stage: statusText };
+                    render();
+                }
+            }, 3000);
+        }
+
+        // ===== 初始化 =====
+        (function init() {
+            var cfg = loadConfig();
+            if (cfg && cfg.pat) {
+                state.patSet = true;
+                refreshList('');
+            } else {
+                state.patSet = false;
+                render();
+            }
+        })();
+    </script>
+</body>
+</html>
