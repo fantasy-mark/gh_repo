@@ -1,0 +1,49 @@
+name: docker-build
+on:
+  workflow_dispatch:
+    inputs:
+      dockerfile_b64:
+        description: 'Dockerfile content (base64)'
+        required: true
+      arch:
+        description: 'Target architecture'
+        required: true
+        default: amd64
+        type: choice
+        options:
+          - amd64
+          - arm64
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Buildx with proxy mirror
+        run: |
+          cat > /tmp/buildkitd.toml <<'EOF'
+          [registry."docker.io"]
+            mirrors = ["https://proxy.vvvv.ee/images"]
+          EOF
+          docker buildx create --name proxy-builder --driver docker-container --config /tmp/buildkitd.toml --use
+          docker buildx inspect proxy-builder --bootstrap
+      - name: Write Dockerfile
+        run: |
+          echo "${{ github.event.inputs.dockerfile_b64 }}" | base64 -d > Dockerfile
+          echo "=== Dockerfile ==="
+          cat Dockerfile
+      - name: Build image
+        run: |
+          docker buildx build --platform linux/${{ github.event.inputs.arch }} -o type=docker,dest=artifact.tar .
+          gzip -f artifact.tar
+          ls -lh artifact.tar.gz
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="docker-$(date +%s)"
+          gh release create "$TAG" artifact.tar.gz --repo "$GITHUB_REPOSITORY" --title "Docker Image linux/${{ github.event.inputs.arch }} $(date -u +%Y%m%d-%H%M%S)" --notes "Load with: docker load -i artifact.tar.gz" || true
